@@ -1,0 +1,61 @@
+---
+
+- name: create a new subnet required for RDS Group
+  ec2_vpc_subnet:
+    state: present
+    vpc_id: "{{vpc_id}}"
+    cidr: 192.168.16.0/24
+    az: "us-west-1b"
+    region: "{{region}}"
+    resource_tags:
+      Name: rds_subnet
+  register: rds_sub
+
+- debug:
+   var: rds_sub
+
+- name: create RDS subnet group
+  rds_subnet_group:
+   description: RDS FitCycle
+   state: present
+   region: "{{region}}"
+   name: "{{vpc_name}}"
+   subnets: 
+        - "{{vpc_subnet_id}}"
+        - "{{rds_sub.subnet.id}}"
+
+- name: deploy RDS instance
+  rds:
+    command: create
+    instance_name: fitcycle-rds1
+    db_engine: MySQL
+    region: "{{region}}"
+    instance_type: db.m1.small
+    backup_retention: 0
+    size: 25
+    subnet: "{{ vpc_name }}"
+    vpc_security_groups: "sg-09f2ba539ec9b8d01"
+    zone: "us-west-1a"
+    db_name: "prospect"
+    username: db_app_user
+    password: testing123
+    wait: yes
+    wait_timeout: 1200
+    tags:
+       Environment: fitcycle
+
+- name: getting RDS info
+  rds:
+    command: facts
+    region: "{{region}}"
+    instance_name: fitcycle-rds1
+  register: db_facts
+
+- debug:
+   var: db_facts
+
+- name: saving variables for templates
+  set_fact: 
+     rds_user: "{{rds_user}}"
+     rds_pass: "{{rds_pass}}"
+     rds_endpoint: "{{db_facts.instance.endpoint}}" 

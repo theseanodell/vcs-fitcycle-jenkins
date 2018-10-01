@@ -1,0 +1,12 @@
+---
+
+- name: make mysql listen on all address instead of 127
+  lineinfile: 
+    path: /etc/mysql/mysql.conf.d/mysqld.cnf
+    regexp: '^bind-address'
+    line: 'bind-address=0.0.0.0'
+
+- name: restarting mysql
+  service:
+    name: mysql
+    state: restarted

@@ -1,0 +1,9 @@
+---
+
+- name: Configure App
+  hosts: localhost
+  gather_facts: False
+  vars_files: 
+    - vars.yml
+  roles:
+   - terraform_build

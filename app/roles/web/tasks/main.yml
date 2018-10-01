@@ -1,0 +1,19 @@
+---
+
+- name: debug
+  debug: 
+    var:   hostvars[groups['tag_Tier_App']] 
+
+- name: "Configure web Nginx instance with templated configuration"
+  template:
+        src: "webx-ngninx.cfg.j2"
+        dest: "/etc/nginx/nginx.conf"
+        owner: "root"
+        group: "root"
+        mode: 0644
+
+
+- name: restarting nginx
+  service:
+   name: nginx
+   state: restarted

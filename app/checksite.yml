@@ -1,0 +1,10 @@
+---
+
+- name: Checking site liveliness
+  hosts: localhost
+  gather_facts: False
+  vars_files: 
+    - vars.yml
+  roles:
+   - checksite
+

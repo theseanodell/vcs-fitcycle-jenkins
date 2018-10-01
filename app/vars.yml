@@ -1,0 +1,37 @@
+---
+
+
+#location of where this app is being run from on this host. 
+#this is the root directory of where tfvars will be created and hosts/ec2.py is located
+app_root: /home/jenkins/vcs-fitcycle
+
+
+
+###########################
+#only used if deploying rds
+deploy_rds: "false"
+region: "us-west-1"
+vpc_name: "test"
+vpc_subnet_id: "subnet-0c08e7db60a63ed48"
+vpc_id: "vpc-0b0b8c57503fd0cc0"
+rds_user: "db_app_user"
+rds_pass: "testing123"
+############################
+
+#sql username and password
+db_user: "db_app_user"
+db_password: "VMware1!"
+
+#aws creds
+aws_access_key: "AKIAJEJUXRO4BH3HN6VA"
+aws_secret_key: "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"
+#region
+awsregion: "us-west-1"
+#key to inject in to instances
+keypair: "jacob"
+#vpc name
+vpcname: "test"
+#network cidr to use in vpc
+cidr: "192.168.0.0"
+
+

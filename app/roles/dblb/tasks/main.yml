@@ -1,0 +1,13 @@
+---
+- name: "Configure DB HAProxy instance with templated configuration"
+  template:
+        src: "db-haproxy.cfg.j2"
+        dest: "/etc/haproxy/haproxy.cfg"
+        owner: "root"
+        group: "root"
+        mode: 0644
+
+
+- name: restarting haproxy service
+  service: name=haproxy state=restarted
+

@@ -1,0 +1,6 @@
+---
+
+- name: check if signup is live
+  uri:
+   url: http://{{ item }}/signup
+  with_items: "{{ groups['tag_Tier_Web'] }}"

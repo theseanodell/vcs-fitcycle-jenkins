@@ -1,0 +1,10 @@
+---
+
+- name: Destroying Infrastructure
+  hosts: localhost
+  #become: true
+  gather_facts: False
+  vars_files: 
+    - vars.yml
+  roles:
+   - terraform_destroy

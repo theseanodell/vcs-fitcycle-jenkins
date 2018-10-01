@@ -1,0 +1,64 @@
+---
+- hosts: "all"
+  become: true
+  gather_facts: true
+
+- hosts: "tag_Tier_Web"
+  become: true
+  gather_facts: false
+  tasks:
+    - name: "Configure web Nginx instance with templated configuration"
+      template:
+        src: "templates/web-nginx.cfg.j2"
+        dest: "/etc/nginx/nginx.conf"
+        owner: "root"
+        group: "root"
+        mode: 0644
+
+- hosts: "tag_Tier_App"
+  become: true
+  gather_facts: false
+  tasks:
+    - name: "Render App templated Django settings file"
+      template:
+        src: "templates/settings.py.j2"
+        dest: "/home/ubuntu/fitcycle/fitcycle/settings.py"
+        owner: "ubuntu"
+        group: "ubuntu"
+        mode: 0644
+
+- hosts: "tag_Tier_Api"
+  become: true
+  gather_facts: false
+  tasks:
+    - name: "Render API templated Django settings file"
+      template:
+        src: "templates/mysql.env.j2"
+        dest: "/home/ubuntu/api_server/mysql.env"
+        owner: "ubuntu"
+        group: "ubuntu"
+        mode: 0644
+
+- hosts: "tag_Name_DB_Load_Balancer"
+  become: true
+  gather_facts: false
+  tasks:
+    - name: "Configure DB HAProxy instance with templated configuration"
+      template:
+        src: "templates/db-haproxy.cfg.j2"
+        dest: "/etc/haproxy/haproxy.cfg"
+        owner: "root"
+        group: "root"
+        mode: 0644
+
+- hosts: "all"
+  become: true
+  gather_facts: false
+  tasks:
+    - name: "Update hosts files on all instances with templated configuration"
+      template:
+        src: "templates/hosts.cfg.j2"
+        dest: "/etc/hosts"
+        owner: "root"
+        group: "root"
+        mode: 0644

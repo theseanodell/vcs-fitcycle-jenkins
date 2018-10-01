@@ -1,0 +1,41 @@
+---
+
+- name: "Render App templated Django settings file"
+  template:
+        src: "app-settings.py.j2"
+        dest: "/home/ubuntu/fitcycle/fitcycle/settings.py"
+        owner: "ubuntu"
+        group: "ubuntu"
+        mode: 0644
+
+#this will need to be removed once the AMI is fixed
+- name: Installing python mysql and statsd
+  pip:
+    name: 
+     - pymysql
+     - statsd
+
+- name: Getting additional Python requirements.
+  pip:
+    requirements: /home/ubuntu/fitcycle/requirements.txt
+  ignore_errors: yes
+
+- name: getting fitcycle pid
+  shell: "ps -ef | grep -v grep | grep -w manage.py | awk '{print $2}'"
+  register: manage_py_process
+
+- name: stopping fitcycle app
+  shell: "kill -9 {{ item }}"
+  with_items: "{{ manage_py_process.stdout_lines }}"
+
+- name: migrate app
+  command: '/usr/bin/python /home/ubuntu/fitcycle/manage.py migrate'
+  register: migrate_app
+
+- name: restarting fitcycle app
+  shell: nohup ./startfitcycle.sh & chdir=/home/ubuntu/fitcycle
+  register: fitout
+
+- name: status of fitcycle app
+  debug: 
+   msg: fitout

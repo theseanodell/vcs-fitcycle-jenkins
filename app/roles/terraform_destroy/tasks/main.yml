@@ -1,0 +1,6 @@
+---
+
+- name: destroying infrastructure 
+  terraform:
+    project_path: "{{ app_root }}/"
+    state: absent

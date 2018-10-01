@@ -1,0 +1,9 @@
+---
+- name: Configure Web
+  hosts: tag_Tier_Web
+  become: true
+  gather_facts: False
+  vars_files: 
+    - vars.yml 
+  roles:
+   - web 

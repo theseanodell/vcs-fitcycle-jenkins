@@ -1,0 +1,14 @@
+---
+
+#this play waits for terraform to spin up instances and then waits for ssh to be available before moving forward
+- name: reloading inventory file
+  meta: refresh_inventory
+
+- name: waiting for all instances to be up before starting ( 2 minutes max per host)
+  wait_for:
+    port: 22
+    delay: 5
+    host: "{{ item }}"
+    timeout: 120
+  with_items: "{{ groups['all'] }}"
+

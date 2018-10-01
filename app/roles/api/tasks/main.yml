@@ -1,0 +1,32 @@
+---
+- name: "Render API templated Django settings file"
+  template:
+        src: "mysql.env"
+        dest: "/home/ubuntu/api_server/mysql.env"
+        owner: "ubuntu"
+        group: "ubuntu"
+        mode: 0644
+
+- name: pip install requirements
+  pip:
+    name:
+     - statsd
+     - flask
+     - requests
+     - pymysql
+
+- name: getting fitcycle pid
+  shell: "ps -ef | grep -v grep | grep -w api_server.py | awk '{print $2}'"
+  register: api_py_process
+
+- name: stopping api server
+  shell: "kill -9 {{ item }}"
+  with_items: "{{ api_py_process.stdout_lines }}"
+
+  
+- name: staring api server
+  shell: ./startapi.sh chdir=/home/ubuntu/api_server
+
+- name: App is deployed and ready
+  debug:
+    msg: "App load balanced at following IPs: {{ groups['tag_Tier_Web'] }}"

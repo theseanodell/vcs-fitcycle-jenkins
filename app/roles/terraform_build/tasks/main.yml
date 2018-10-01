@@ -1,0 +1,79 @@
+---
+
+- name: setting cache refresh in hosts file to 0
+  lineinfile:
+    path: "{{app_root }}/hosts/ec2.ini"
+    regexp: "^cache_max_age"
+    line: "cache_max_age=0"
+
+- name: creating terraform.tfvars file
+  file:
+   path: "{{ app_root }}/terraform.tfvars"
+   
+
+- name: refreshing terraform aws creds (access_key)
+  lineinfile:
+    path: "{{ app_root }}/terraform.tfvars"
+    regexp: "^akey"
+    line: "akey = \"{{ aws_access_key }}\""
+
+- name: refreshing terraform aws creds (secret_key)
+  lineinfile:
+    path: "{{ app_root }}/terraform.tfvars"
+    regexp: "^skey"
+    line: "skey = \"{{ aws_secret_key }}\""
+
+
+- name: refreshing terraform aws region
+  lineinfile:
+    path: "{{ app_root }}/terraform.tfvars"
+    regexp: "^saws_region"
+    line: "awsregion = \"{{ awsregion }}\""
+
+
+- name: refreshing terraform aws vpc_name
+  lineinfile:
+    path: "{{ app_root }}/terraform.tfvars"
+    regexp: "^vpcname"
+    line: "vpcname = \"{{ vpcname }}\""
+
+
+- name: refreshing terraform aws cidr
+  lineinfile:
+    path: "{{ app_root }}/terraform.tfvars"
+    regexp: "^cidr"
+    line: "cidr = \"{{ cidr }}\""
+
+
+- name: adding creds to aws inventory file (kew_id)
+  lineinfile:
+   path: "{{ app_root }}/hosts/ec2.ini"
+   regexp: "^aws_secret_key_id"
+   line: "aws_secret_key_id =  {{ aws_access_key }}"
+
+
+- name: adding creds to aws inventory file (access_key)
+  lineinfile:
+   path: "{{ app_root }}/hosts/ec2.ini"
+   regexp: "^aws_secret_access_key"
+   line: "aws_secret_access_key = {{ aws_secret_key }}"
+
+
+- name: deploying big app terraform template
+  terraform:
+    project_path: "{{ app_root}}/"
+    state: present
+
+- name: reading terraform state file
+  shell: "grep -i -m1 vpc_id {{ app_root }}/terraform.tfstate | awk -F \":\" '{print $2}' " 
+  register: vpc_id.stdout | regex_replace('\",') 
+
+- name: changing vpc_id in ec2.ini
+  lineinfile:
+   path: "{{app_root}}/hosts/ec2.ini"
+   regexp: '^instance_filters'
+   line: "instance_filters = {{ vpc_id }}"
+
+- name: refreshing cache from aws 
+  shell: "{{ app_root }}/hosts/ec2.py --refresh-cache"
+

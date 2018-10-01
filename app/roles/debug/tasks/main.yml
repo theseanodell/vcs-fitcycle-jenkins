@@ -1,0 +1,17 @@
+---
+- name: reading terraform state file
+  set_fact:
+    vpc_id: "{{ lookup('file', '/root/vcs-fitcycle/terraform.tfstate') |from_json}}" 
+
+- debug: 
+   var: item
+  with_items: "{{ vpc_id.modules }}"
+  
+  #msg: " {{ vpc_id | json_query('vpc_id.*') }} "
+  
+
+
+
+#- name: debug
+#  debug:
+#    var: hostvars[groups['tag_Tier_DBLB'][0]].ansible_default_ipv4.address

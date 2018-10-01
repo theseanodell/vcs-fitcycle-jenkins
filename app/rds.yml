@@ -1,0 +1,10 @@
+---
+
+- name: Configure App
+  hosts: localhost
+  become: true
+  gather_facts: False
+  vars_files: 
+    - vars.yml
+  roles:
+   - rds 

@@ -1,0 +1,228 @@
+# Define some variables used in resource creation
+variable "keypair" {}
+variable "vpcname" {}
+variable "cidr" {}
+variable "images" {
+  type = "map"
+  default = {
+    web="ami-9635d2f5"
+    mgmt="ami-1c33d47f"
+    db="ami-0a3ed969"
+    app="ami-1630d775"
+    api="ami-2330d740"
+  }
+}
+# Create resources for application deployment
+resource "aws_vpc" "vcs_vpc" {
+  cidr_block = "${var.cidr}/16"
+  enable_dns_support = true
+  enable_dns_hostnames = true
+  tags = {
+    Name = "${var.vpcname}"
+  }
+}
+resource "aws_subnet" "public_subnet1" {
+  vpc_id                  = "${aws_vpc.vcs_vpc.id}"
+  cidr_block              = "${var.cidr}/20"
+  map_public_ip_on_launch = true
+  tags = {
+    Name =  "Subnet1-${var.vpcname}"
+  }
+}
+resource "aws_internet_gateway" "gw" {
+  vpc_id = "${aws_vpc.vcs_vpc.id}"
+  tags {
+        Name = "IG-${var.vpcname}"
+    }
+}
+resource "aws_route" "internet_access" {
+  route_table_id         = "${aws_vpc.vcs_vpc.main_route_table_id}"
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id             = "${aws_internet_gateway.gw.id}"
+}
+resource "aws_route_table_association" "public_subnet1_association" {
+    subnet_id = "${aws_subnet.public_subnet1.id}"
+    route_table_id = "${aws_vpc.vcs_vpc.main_route_table_id}"
+}
+resource "aws_security_group" "mgmt_sec_group" {
+    name = "mgmt_${var.vpcname}"
+    ingress {
+        from_port   = 22
+        to_port     = 22
+        protocol    = "tcp"
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+    ingress {
+        from_port   = 24224
+        to_port     = 24224
+        protocol    = "tcp"
+        cidr_blocks = ["${var.cidr}/16"]
+    }
+    ingress {
+        from_port   = 2878
+        to_port     = 2878
+        protocol    = "tcp"
+        cidr_blocks = ["${var.cidr}/16"]
+    }
+    egress {
+        from_port   = 0
+        to_port     = 0
+        protocol    = "-1"
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+    vpc_id = "${aws_vpc.vcs_vpc.id}"
+}
+resource "aws_security_group" "web_sec_group" {
+    name = "web_${var.vpcname}"
+    ingress {
+        from_port   = 22
+        to_port     = 22
+        protocol    = "tcp"
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+    ingress {
+        from_port   = 443
+        to_port     = 443
+        protocol    = "tcp"
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+    ingress {
+        from_port   = 80
+        to_port     = 80
+        protocol    = "tcp"
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+    egress {
+        from_port   = 0
+        to_port     = 0
+        protocol    = "-1"
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+    vpc_id = "${aws_vpc.vcs_vpc.id}"
+}
+resource "aws_security_group" "app_sec_group" {
+    name = "app_${var.vpcname}"
+    ingress {
+        from_port   = 22
+        to_port     = 22
+        protocol    = "tcp"
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+    ingress {
+        from_port   = 8000
+        to_port     = 8000
+        protocol    = "tcp"
+        cidr_blocks = ["${var.cidr}/16"]
+    }
+    egress {
+        from_port   = 0
+        to_port     = 0
+        protocol    = "-1"
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+    vpc_id = "${aws_vpc.vcs_vpc.id}"
+}
+resource "aws_security_group" "api_sec_group" {
+    name = "api_${var.vpcname}"
+    ingress {
+        from_port   = 22
+        to_port     = 22
+        protocol    = "tcp"
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+    ingress {
+        from_port   = 5000
+        to_port     = 5000
+        protocol    = "tcp"
+        cidr_blocks = ["${var.cidr}/16"]
+    }
+    egress {
+        from_port   = 0
+        to_port     = 0
+        protocol    = "-1"
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+    vpc_id = "${aws_vpc.vcs_vpc.id}"
+}
+resource "aws_security_group" "db_sec_group" {
+    name = "db_${var.vpcname}"
+    ingress {
+        from_port   = 22
+        to_port     = 22
+        protocol    = "tcp"
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+    ingress {
+        from_port   = 3306
+        to_port     = 3306
+        protocol    = "tcp"
+        cidr_blocks = ["${var.cidr}/16"]
+    }
+    egress {
+        from_port   = 0
+        to_port     = 0
+        protocol    = "-1"
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+    vpc_id = "${aws_vpc.vcs_vpc.id}"
+}
+resource "aws_instance" "db1" {
+  ami           = "${var.images["db"]}"
+  instance_type = "t2.micro"
+  subnet_id = "${aws_subnet.public_subnet1.id}"
+  vpc_security_group_ids = ["${aws_security_group.db_sec_group.id}"]
+  key_name                    = "${var.keypair}"
+  tags {
+        App = "${var.vpcname}"
+        Name = "db1-${var.vpcname}"
+        Tier = "DB"
+  }
+}
+resource "aws_instance" "app1" {
+  ami           = "${var.images["app"]}"
+  instance_type = "t2.micro"
+  subnet_id = "${aws_subnet.public_subnet1.id}"
+  vpc_security_group_ids = ["${aws_security_group.app_sec_group.id}"]
+  key_name                    = "${var.keypair}"
+  tags {
+        App = "${var.vpcname}"
+        Name = "app1-${var.vpcname}"
+        Tier = "App"
+  }
+}
+resource "aws_instance" "webx1" {
+  ami           = "${var.images["web"]}"
+  instance_type = "t2.micro"
+  subnet_id = "${aws_subnet.public_subnet1.id}"
+  vpc_security_group_ids = ["${aws_security_group.web_sec_group.id}"]
+  key_name                    = "${var.keypair}"
+  tags {
+        App = "${var.vpcname}"
+        Name = "webx1-${var.vpcname}"
+        Tier = "Web"
+  }
+}
+resource "aws_instance" "api1" {
+  ami           = "${var.images["api"]}"
+  instance_type = "t2.micro"
+  subnet_id = "${aws_subnet.public_subnet1.id}"
+  vpc_security_group_ids = ["${aws_security_group.api_sec_group.id}"]
+  key_name                    = "${var.keypair}"
+  tags {
+        App = "${var.vpcname}"
+        Name = "api1-${var.vpcname}"
+        Tier = "API"
+  }
+}
+resource "aws_instance" "mgmt" {
+  ami           = "${var.images["mgmt"]}"
+  instance_type = "t2.medium"
+  subnet_id = "${aws_subnet.public_subnet1.id}"
+  vpc_security_group_ids = ["${aws_security_group.mgmt_sec_group.id}"]
+  key_name                    = "${var.keypair}"
+  tags {
+        App = "${var.vpcname}"
+        Name = "mgmt-${var.vpcname}"
+        Tier = "Mgmt"
+  }
+}
